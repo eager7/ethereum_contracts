@@ -126,7 +126,7 @@ func (r *Requester) RequestContract(url string) (full, contract, abi, code strin
 	if errs != nil || ret.StatusCode != http.StatusOK {
 		req, err := res.MakeRequest()
 		if err == nil {
-			fmt.Printf("request body:%+v\n", req)
+			fmt.Printf("request status:%d, body:%+v\n", ret.StatusCode, req)
 		}
 		var errStr string
 		for _, e := range errs {
