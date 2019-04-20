@@ -7,9 +7,7 @@ import (
 	"github.com/eager7/ethereum_contracts/contracts"
 	"github.com/eager7/ethereum_contracts/database"
 	"github.com/eager7/ethereum_contracts/request"
-	"os"
-	"os/signal"
-	"syscall"
+	"sync"
 )
 
 func main() {
@@ -31,17 +29,23 @@ func main() {
 	}
 	fmt.Println("search contracts len:", len(cons))
 	ctx, cancel := context.WithCancel(context.Background())
-	if err := contracts.ParseContracts(ctx, db, requester, cons, cfg.EthOpt.ApiAddress, cfg.Path); err != nil {
-		panic(err)
+	wg := sync.WaitGroup{}
+	wg.Add(5)
+	index := len(cons) / 5
+	for i := 0; i < 5; i++ {
+		go func(offset int) {
+			start := index * offset
+			end := index * (offset + 1)
+			if offset == 4 {
+				end = len(cons)
+			}
+			fmt.Println("start:", start, "to:", end)
+			if err := contracts.ParseContracts(ctx, db, requester, cons[start:end], cfg.EthOpt.ApiAddress, cfg.Path); err != nil {
+				panic(err)
+			}
+			wg.Done()
+		}(i)
 	}
-
-	pause()
+	wg.Wait()
 	cancel()
-}
-
-func pause() {
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	defer signal.Stop(interrupt)
-	<-interrupt
 }
