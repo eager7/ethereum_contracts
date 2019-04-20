@@ -16,6 +16,6 @@ func TestSearchContracts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("contracts:", len(contracts))
+	fmt.Println("contracts:", contracts[0])
 }
 
