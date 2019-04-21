@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/eager7/ethereum_contracts/config"
 	"github.com/eager7/ethereum_contracts/database"
+	"github.com/eager7/ethereum_contracts/database/tables"
 	"github.com/eager7/ethereum_contracts/request"
 	"testing"
 )
@@ -29,8 +30,8 @@ func TestParseContracts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c := Contract{hash: "ff24fbc66d5f41cfdb397e735e7bb4b74480738871564d1e75dd5b183f9892a8", count: 92}
-	if err := c.RequestContractCode(context.Background(), db.LogMode(true), requester, cfg.EthOpt.ApiAddress, cfg.Path); err != nil {
+	c := tables.ContractCountInfo{Hash: "67d52d39181d7e8e8b3342808ba64cab067564ed4397bd36d4f80ce7a075f774", Count: 92}
+	if err := ParseContracts(context.Background(), db.LogMode(true),requester,  []*tables.ContractCountInfo{&c,},cfg.EthOpt.ApiAddress, "/tmp/test_my"); err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("%+v", c)

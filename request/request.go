@@ -125,7 +125,7 @@ func (r *Requester) RequestContract(url string) (full, contract, abi, code strin
 	ret, body, errs := res.Timeout(time.Second * 5).Retry(5,time.Second,http.StatusRequestTimeout,http.StatusBadRequest).Get(url).End()
 	if errs != nil || ret.StatusCode != http.StatusOK {
 		req, err := res.MakeRequest()
-		if err == nil {
+		if err == nil && req != nil && ret != nil {
 			fmt.Printf("request status:%d, body:%+v\n", ret.StatusCode, req)
 		}
 		var errStr string

@@ -39,18 +39,25 @@ func (c *Contract) RequestContractCode(ctx context.Context, db *gorm.DB, request
 		return err
 	}
 	for _, ct := range contractsInfo {
+	retry:
 		fmt.Println("handle contract:", ct.Address)
 		tx, _, err := requester.Client.TransactionByHash(ctx, common.HexToHash(ct.Transaction))
 		if err != nil {
-			return err
+			fmt.Println("get tx by hash err:", err)
+			time.Sleep(time.Second * 1)
+			goto retry
 		}
 		c.code = common.Bytes2Hex(tx.Data())
 		c.full, c.contract, c.abi, _, err = requester.RequestContract(api + common.HexToAddress(ct.Address).Hex())
 		if err != nil {
-			return err
+			fmt.Println("get contract err:", err)
+			time.Sleep(time.Second * 1)
+			goto retry
 		}
-		if err := c.StoreContract(fmt.Sprintf("%s/%d_%s/%s/", dir, c.count, c.hash, common.HexToAddress(ct.Address).Hex())); err != nil {
-			return err
+		if err := c.StoreContract(fmt.Sprintf("%s/%d_%s/%s-%s/", dir, c.count, c.hash[:10], ct.Creator, ct.Address)); err != nil {
+			fmt.Println("store contract err:", err)
+			time.Sleep(time.Second * 1)
+			goto retry
 		}
 	}
 	return nil
