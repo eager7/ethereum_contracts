@@ -29,6 +29,10 @@ func ParseContracts(ctx context.Context, db *gorm.DB, requester *request.Request
 			time.Sleep(time.Second * 1)
 			goto retry
 		}
+		if err := db.Where("hash=?", contract.Hash).Delete(&tables.TableContractInfo{}).Error; err != nil && err != gorm.ErrRecordNotFound {
+			fmt.Println("delete contract err:", err)
+			goto retry
+		}
 	}
 	return nil
 }
