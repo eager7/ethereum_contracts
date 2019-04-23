@@ -119,7 +119,7 @@ func Initialize(url string) (*Requester, error) {
 	return &Requester{Client: client}, nil
 }
 
-func (r *Requester) RequestContract(url string) (full, contract, abi, code string, err error) {
+func (r *Requester) RequestContract(url string) (full, code, abi, bin string, err error) {
 	fmt.Println("request url:", url)
 	res := gorequest.New().Proxy(UserProxyLists[rand.Intn(len(UserProxyLists))]).Set("user-agent", UserAgentLists[rand.Intn(len(UserAgentLists))])
 	ret, body, errs := res.Timeout(time.Second * 5).Retry(5,time.Second,http.StatusRequestTimeout,http.StatusBadRequest).Get(url).End()
@@ -139,11 +139,11 @@ func (r *Requester) RequestContract(url string) (full, contract, abi, code strin
 		return "", "", "", "", err
 	}
 	codeSelector := doc.Find("#dividcode")
-	contract = codeSelector.Find("pre[class='js-sourcecopyarea editor']").Text()
+	code = codeSelector.Find("pre[class='js-sourcecopyarea editor']").Text()
 	abi = codeSelector.Find("pre[class='wordwrap js-copytextarea2']").Text()
-	code = codeSelector.Find("#verifiedbytecode2").Text()
+	bin = codeSelector.Find("#verifiedbytecode2").Text()
 
-	return codeSelector.Text(), contract, abi, code, nil
+	return codeSelector.Text(), code, abi, bin, nil
 }
 
 func GetIpList() ([]string, error) {

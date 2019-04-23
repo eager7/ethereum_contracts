@@ -8,7 +8,7 @@ import (
 
 
 func TestSearchContracts(t *testing.T) {
-	db, err := database.Initialize("127.0.0.1:3306", "root", "plainchant", "eth_database", 2, 1)
+	db, err := database.Initialize("127.0.0.1:3306", "root", "plainchant", "eth_contract", 2, 1)
 	if err != nil {
 		panic(err)
 	}

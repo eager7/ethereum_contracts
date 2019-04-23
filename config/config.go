@@ -27,6 +27,7 @@ type DbOpt struct {
 
 type Config struct {
 	Path   string
+	Worker int    `json:"worker"`
 	EthOpt EthOpt `json:"eth_opt"`
 	DbOpt  DbOpt  `json:"db_opt"`
 }
@@ -73,19 +74,23 @@ func (c *Config) ReadConfigFile(file string) error {
 
 //此处设置默认配置，如果没有在此处设置，当读不到值时，会使用零值
 func (c *Config) initDefaultConfig() {
+	viper.SetDefault("worker", 100)
+
 	viper.SetDefault("eth.address", "http://47.52.157.31:8585")
 	viper.SetDefault("eth.api_address", "https://etherscan.io/address/")
 
 	viper.SetDefault("db.address", "127.0.0.1:3306")
 	viper.SetDefault("db.user", "root")
 	viper.SetDefault("db.password", "plainchant")
-	viper.SetDefault("db.db_name", "eth_database")
+	viper.SetDefault("db.db_name", "eth_contract")
 	viper.SetDefault("db.max_open_conn", 2000)
 	viper.SetDefault("db.max_idle_conn", 1000)
 }
 
 //如果文件中配置被更改，此处读取会覆盖默认配置参数
 func (c *Config) readFileConfig() {
+	c.Worker = viper.GetInt("worker")
+
 	c.EthOpt.Address = viper.GetString("eth.address")
 	c.EthOpt.ApiAddress = viper.GetString("eth.api_address")
 

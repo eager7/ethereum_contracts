@@ -10,8 +10,6 @@ import (
 	"sync"
 )
 
-const worker = 5
-
 func main() {
 	cfg, err := config.Initialize()
 	if err != nil {
@@ -32,13 +30,13 @@ func main() {
 	fmt.Println("search contracts len:", len(cons))
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
-	wg.Add(worker)
-	index := len(cons) / worker
-	for i := 0; i < worker; i++ {
+	wg.Add(cfg.Worker)
+	index := len(cons) / cfg.Worker
+	for i := 0; i < cfg.Worker; i++ {
 		go func(offset int) {
 			start := index * offset
 			end := index * (offset + 1)
-			if offset == worker-1 {
+			if offset == cfg.Worker-1 {
 				end = len(cons)
 			}
 			fmt.Println("start:", start, "to:", end)

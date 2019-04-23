@@ -21,7 +21,7 @@ func Initialize(addr, user, password, dbName string, maxOpenConns, maxIdleConns 
 
 func SearchContracts(db *gorm.DB) ([]*tables.ContractCountInfo, error) {
 	var contracts []*tables.ContractCountInfo
-	err := db.Table("t_contract_info").Select("hash, count(`hash`) as count").Group("hash").Scan(&contracts).Error
+	err := db.Table("t_contract_info").Select("hash, count(`hash`) as count").Group("hash").Order("count desc").Limit(10).Scan(&contracts).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}

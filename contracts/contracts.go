@@ -12,12 +12,12 @@ import (
 )
 
 type Contract struct {
-	hash     string
-	count    int64
-	full     string
-	contract string
-	abi      string
-	code     string
+	hash  string
+	count int64
+	full  string
+	code  string
+	abi   string
+	bin   string
 }
 
 func ParseContracts(ctx context.Context, db *gorm.DB, requester *request.Requester, contracts []*tables.ContractCountInfo, api, dir string) error {
@@ -29,10 +29,10 @@ func ParseContracts(ctx context.Context, db *gorm.DB, requester *request.Request
 			time.Sleep(time.Second * 1)
 			goto retry
 		}
-		if err := db.Where("hash=?", contract.Hash).Delete(&tables.TableContractInfo{}).Error; err != nil && err != gorm.ErrRecordNotFound {
-			fmt.Println("delete contract err:", err)
-			goto retry
-		}
+		//if err := db.Where("hash=?", contract.Hash).Delete(&tables.TableContractInfo{}).Error; err != nil && err != gorm.ErrRecordNotFound {
+		//	fmt.Println("delete contract err:", err)
+		//	goto retry
+		//}
 	}
 	return nil
 }
@@ -42,6 +42,10 @@ func (c *Contract) RequestContractCode(ctx context.Context, db *gorm.DB, request
 	if err := db.Where("hash=?", c.hash).Find(&contractsInfo).Error; err != nil {
 		return err
 	}
+	if len(contractsInfo) == 0 {
+		return nil
+	}
+	var creator, address string = contractsInfo[0].Creator, contractsInfo[0].Address
 	for _, ct := range contractsInfo {
 	retry:
 		fmt.Println("handle contract:", ct.Address)
@@ -51,19 +55,39 @@ func (c *Contract) RequestContractCode(ctx context.Context, db *gorm.DB, request
 			time.Sleep(time.Second * 1)
 			goto retry
 		}
-		c.code = common.Bytes2Hex(tx.Data())
-		c.full, c.contract, c.abi, _, err = requester.RequestContract(api + common.HexToAddress(ct.Address).Hex())
+		c.bin = common.Bytes2Hex(tx.Data())
+		full, code, abi, _, err := requester.RequestContract(api + common.HexToAddress(ct.Address).Hex())
 		if err != nil {
 			fmt.Println("get contract err:", err)
 			time.Sleep(time.Second * 1)
 			goto retry
 		}
-		if err := c.StoreContract(fmt.Sprintf("%s/%d_%s/%s-%s/", dir, c.count, c.hash[:10], ct.Creator, ct.Address)); err != nil {
-			fmt.Println("store contract err:", err)
-			time.Sleep(time.Second * 1)
-			goto retry
+		if len(full) > len(c.full) {
+			c.full = full
 		}
+		if len(code) > len(c.code) {
+			creator, address = ct.Creator, ct.Address
+			c.code = code
+		}
+		if len(abi) > len(c.abi) {
+			c.abi = abi
+		}
+
 	}
+	codeInfo := &tables.TableCodeInfo{
+		Creator: creator,
+		Address: address,
+		Hash:    c.hash,
+		Code:    c.code,
+		Bin:     c.bin,
+		Abi:     c.abi,
+	}
+	if err := tables.InsertCodeToDB(db, codeInfo); err != nil {
+		return err
+	}
+	//if err := c.StoreContract(fmt.Sprintf("%s/%d_%s/%s-%s/", dir, c.count, c.hash[:10], creator, address)); err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -74,10 +98,10 @@ func (c *Contract) StoreContract(dir string) error {
 	if err := WriteFile(dir, "abi.bin", c.abi); err != nil {
 		return err
 	}
-	if err := WriteFile(dir, "code.bin", c.code); err != nil {
+	if err := WriteFile(dir, "code.bin", c.bin); err != nil {
 		return err
 	}
-	if err := WriteFile(dir, "code.txt", c.contract); err != nil {
+	if err := WriteFile(dir, "code.txt", c.code); err != nil {
 		return err
 	}
 	return nil
